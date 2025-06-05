@@ -21,7 +21,6 @@ func TestMetatadaRW(t *testing.T) {
 	metadataR.ReadFromBuffer(data)
 
 	if !reflect.DeepEqual(metadataW, metadataR) {
-		t.Fatalf("Metadata: %d, %d \n% x", metadataW.PageSize, metadataR.PageSize, data)
+		t.Fatalf("Metadata not equal")
 	}
-
 }

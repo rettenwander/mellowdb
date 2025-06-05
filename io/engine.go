@@ -6,19 +6,19 @@ import (
 
 type EngineOptions struct {
 	FileName string
-	PageSize int64
+	PageSize uint32
 }
 
 type Engine struct {
-	options EngineOptions
+	Metadata
 
 	file *os.File
 }
 
 func NewEngine(optoins EngineOptions) (*Engine, error) {
-	e := &Engine{options: optoins, file: nil}
+	e := &Engine{Metadata: *NewMetadata(), file: nil}
 
-	err := e.open()
+	err := e.open(optoins)
 	if err != nil {
 		return nil, err
 	}
@@ -26,23 +26,55 @@ func NewEngine(optoins EngineOptions) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) open() error {
+// If the ErrPageSizeNotUsed error is returned, the engine is still operational.
+func (e *Engine) open(options EngineOptions) error {
 	if e.file != nil {
 		return nil
 	}
 
-	file, err := os.OpenFile(e.options.FileName, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
+	if _, err := os.Stat(options.FileName); err == nil {
+		e.file, err = os.OpenFile(options.FileName, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			return err
+		}
+
+		metadataPage, err := e.ReadPage(PageID(0))
+		if err != nil {
+			return err
+		}
+
+		e.Metadata.ReadFromBuffer(metadataPage.Data)
+
+		if e.PageSize != options.PageSize {
+			return ErrPageSizeNotUsed
+		}
+	} else {
+		e.file, err = os.OpenFile(options.FileName, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			return err
+		}
+
+		e.Metadata.PageSize = options.PageSize
 	}
 
-	e.file = file
 	return nil
 }
 
 func (e *Engine) Close() error {
 	if e.file == nil {
 		return nil
+	}
+
+	metadataPage := e.AllocateEmptyPage()
+	metadataPage.id = 0
+
+	e.Metadata.PageSize = MetadataPageSize
+	e.Metadata.WriteToBuffer(metadataPage.Data)
+
+	err := e.WritePage(metadataPage)
+	if err != nil {
+		e.file.Close()
+		return err
 	}
 
 	return e.file.Close()
@@ -52,7 +84,7 @@ func (e *Engine) ReadPage(id PageID) (*Page, error) {
 	page := e.AllocateEmptyPage()
 	page.id = id
 
-	offset := int64(id) * int64(e.options.PageSize)
+	offset := int64(id) * int64(e.PageSize)
 	_, err := e.file.ReadAt(page.Data, offset)
 	if err != nil {
 		return nil, err
@@ -62,7 +94,7 @@ func (e *Engine) ReadPage(id PageID) (*Page, error) {
 }
 
 func (e *Engine) WritePage(page *Page) error {
-	offset := int64(page.id) * int64(e.options.PageSize)
+	offset := int64(page.id) * int64(e.PageSize)
 
 	_, err := e.file.WriteAt(page.Data, offset)
 	if err != nil {
@@ -73,5 +105,5 @@ func (e *Engine) WritePage(page *Page) error {
 }
 
 func (e *Engine) AllocateEmptyPage() *Page {
-	return &Page{Data: make([]byte, e.options.PageSize)}
+	return &Page{Data: make([]byte, e.PageSize)}
 }

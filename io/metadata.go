@@ -1,6 +1,8 @@
 package io
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 type Metadata struct {
 	PageSize  uint32
@@ -10,7 +12,7 @@ type Metadata struct {
 }
 
 func NewMetadata() *Metadata {
-	return &Metadata{ReleasedPages: make([]PageID, 0)}
+	return &Metadata{ReleasedPages: make([]PageID, 0), PageSize: MetadataPageSize}
 }
 
 func (m *Metadata) WriteToBuffer(buff []byte) {
