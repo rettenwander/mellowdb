@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"encoding/binary"
 
 	"github.com/rettenwander/mellowdb/io"
@@ -135,4 +136,25 @@ func (n *Node) ReadFromBuffer(buf []byte) {
 func (n *Node) AddItem(i *Item) error {
 	n.items = append(n.items, i)
 	return nil
+}
+
+// Returns a boolean indicating if the key was found.
+// If true, the second return value is the index of the key in the node.
+// If false, the second return value is the index of the child node to search next.
+func (n *Node) FindKeyInNode(key []byte) (bool, int) {
+	for i, existingItem := range n.items {
+		res := bytes.Compare(existingItem.key, key)
+		// Keys match
+		if res == 0 {
+			return true, i
+		}
+
+		// The key is not in this node, search child nodes
+		if res == 1 {
+			return false, i
+		}
+	}
+
+	// The key is not in this node, search child nodes
+	return false, len(n.items)
 }
