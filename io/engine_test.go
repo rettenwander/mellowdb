@@ -89,3 +89,30 @@ func TestPersitMetadata(t *testing.T) {
 
 	e.Close()
 }
+
+func TestFreePage(t *testing.T) {
+	tmpDir := t.TempDir()
+	file := filepath.Join(tmpDir, "test.mellow")
+
+	options := io.EngineOptions{
+		PageSize: uint32(os.Getpagesize()),
+		FileName: file,
+	}
+	e, err := io.NewEngine(options)
+	if err != nil {
+		t.Fatalf("io.Engine - open file failed: %v", err)
+	}
+
+	firstID := e.GetNextFreePageID()
+	secondID := e.GetNextFreePageID()
+	if firstID == secondID {
+		t.Fatal("The same PageID is used twice")
+	}
+
+	e.MarkPageAsFree(firstID)
+
+	thirdID := e.GetNextFreePageID()
+	if firstID != thirdID {
+		t.Fatal("The Freed Page ID is not used")
+	}
+}

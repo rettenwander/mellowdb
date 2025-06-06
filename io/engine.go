@@ -107,3 +107,27 @@ func (e *Engine) WritePage(page *Page) error {
 func (e *Engine) AllocateEmptyPage() *Page {
 	return &Page{Data: make([]byte, e.PageSize)}
 }
+
+func (e *Engine) AllocateEmptyPageWithFreeID() *Page {
+	return &Page{Data: make([]byte, e.PageSize), id: e.GetNextFreePageID()}
+}
+
+func (e *Engine) GetNextFreePageID() PageID {
+	if len(e.ReleasedPages) == 0 {
+		e.MaxPageID += 1
+		return e.MaxPageID
+	}
+
+	pageID := e.ReleasedPages[len(e.ReleasedPages)-1]
+	e.ReleasedPages = e.ReleasedPages[:len(e.ReleasedPages)-1]
+
+	return pageID
+}
+
+func (e *Engine) MarkPageAsFree(id PageID) {
+	if id > e.MaxPageID {
+		return
+	}
+
+	e.ReleasedPages = append(e.ReleasedPages, id)
+}
