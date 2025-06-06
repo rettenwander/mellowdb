@@ -138,6 +138,11 @@ func (n *Node) AddItem(i *Item) error {
 	return nil
 }
 
+func (n *Node) AddChild(id io.PageID) error {
+	n.children = append(n.children, id)
+	return nil
+}
+
 // Returns a boolean indicating if the key was found.
 // If true, the second return value is the index of the key in the node.
 // If false, the second return value is the index of the child node to search next.
