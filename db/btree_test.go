@@ -26,20 +26,24 @@ func TestBTreeFind(t *testing.T) {
 		nodes: make(map[int64]*db.Node),
 	}
 
-	item1, _ := db.NewItem([]byte("4"), []byte("Value 4"))
-	item2, _ := db.NewItem([]byte("6"), []byte("Value 6"))
-	item3, _ := db.NewItem([]byte("9"), []byte("Value 9"))
+	keys := [][]byte{[]byte("4"), []byte("6"), []byte("9")}
+	items := make([]*db.Item, len(keys))
+
+	for i, key := range keys {
+		value := append([]byte("Value "), key...)
+		items[i], _ = db.NewItem(key, value)
+	}
 
 	rootNode := db.NewEmptyNode()
 	lnode := db.NewEmptyNode()
 	rnode := db.NewEmptyNode()
 
-	rootNode.AddItem(item2, 0)
+	rootNode.AddItem(items[1], 0)
 	rootNode.AddChild(2)
 	rootNode.AddChild(3)
 
-	lnode.AddItem(item1, 0)
-	rnode.AddItem(item3, 0)
+	lnode.AddItem(items[0], 0)
+	rnode.AddItem(items[2], 0)
 
 	reader.nodes[1] = rootNode
 	reader.nodes[2] = lnode
@@ -47,42 +51,17 @@ func TestBTreeFind(t *testing.T) {
 
 	tree := db.NewBTree(reader, 1)
 
-	index, nodeFouond, err := tree.FindKey([]byte("6"))
-	if err != nil {
-		t.Fatalf("Error finding key: %v", err)
+	for _, key := range keys {
+		_, err := tree.Find(key)
+		if err != nil {
+			t.Fatalf("Error finding key: %s %v", key, err)
+		}
 	}
 
-	if nodeFouond == nil {
-		t.Fatal("Node not found")
-	}
-
-	if index == -1 {
-		t.Fatal("Item index not found")
-	}
-
-	index, nodeFouond, err = tree.FindKey([]byte("9"))
-	if err != nil {
-		t.Fatalf("Error finding key: %v", err)
-	}
-
-	if nodeFouond == nil {
-		t.Fatal("Node not found")
-	}
-
-	if index == -1 {
-		t.Fatal("Item index not found")
-	}
-
-	index, nodeFouond, err = tree.FindKey([]byte("4"))
-	if err != nil {
-		t.Fatalf("Error finding key: %v", err)
-	}
-
-	if nodeFouond == nil {
-		t.Fatal("Node not found")
-	}
-
-	if index == -1 {
-		t.Fatal("Item index not found")
+	_, err := tree.Find([]byte("Not existing key"))
+	if err == nil {
+		t.Fatal("Found key not in tree")
+	} else if !errors.Is(err, db.ErrNotFound) {
+		t.Fatalf("Unexpected error: %v", err)
 	}
 }
