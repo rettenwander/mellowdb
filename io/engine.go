@@ -1,6 +1,7 @@
 package io
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -81,24 +82,44 @@ func (e *Engine) Close() error {
 }
 
 func (e *Engine) ReadPage(id PageID) (*Page, error) {
+	if err := e.checkRWPage(id); err != nil {
+		return nil, err
+	}
+
 	page := e.AllocateEmptyPage()
 	page.id = id
 
 	offset := int64(id) * int64(e.PageSize)
 	_, err := e.file.ReadAt(page.Data, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrReadPage, err)
 	}
 
 	return page, nil
 }
 
 func (e *Engine) WritePage(page *Page) error {
+	if err := e.checkRWPage(page.id); err != nil {
+		return err
+	}
+
 	offset := int64(page.id) * int64(e.PageSize)
 
 	_, err := e.file.WriteAt(page.Data, offset)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrWritePage, err)
+	}
+
+	return nil
+}
+
+func (e *Engine) checkRWPage(id PageID) error {
+	if e.file == nil {
+		return ErrNilFile
+	}
+
+	if id < 0 || e.MaxPageID < id {
+		return ErrInvalidPageID
 	}
 
 	return nil
