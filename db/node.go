@@ -133,9 +133,14 @@ func (n *Node) ReadFromBuffer(buf []byte) {
 	}
 }
 
-func (n *Node) AddItem(i *Item) error {
-	n.items = append(n.items, i)
-	return nil
+func (n *Node) AddItem(i *Item, index int) {
+	if len(n.items) == index {
+		n.items = append(n.items, i)
+		return
+	}
+
+	n.items = append(n.items[:index+1], n.items[index:]...)
+	n.items[index] = i
 }
 
 func (n *Node) AddChild(id io.PageID) error {

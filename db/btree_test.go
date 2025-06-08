@@ -34,12 +34,12 @@ func TestBTreeFind(t *testing.T) {
 	lnode := db.NewEmptyNode()
 	rnode := db.NewEmptyNode()
 
-	rootNode.AddItem(item2)
+	rootNode.AddItem(item2, 0)
 	rootNode.AddChild(2)
 	rootNode.AddChild(3)
 
-	lnode.AddItem(item1)
-	rnode.AddItem(item3)
+	lnode.AddItem(item1, 0)
+	rnode.AddItem(item3, 0)
 
 	reader.nodes[1] = rootNode
 	reader.nodes[2] = lnode

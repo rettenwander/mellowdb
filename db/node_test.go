@@ -14,8 +14,8 @@ func TestNodeRW(t *testing.T) {
 	item2, _ := db.NewItem([]byte("Key2"), []byte("Value 2"))
 
 	node := db.NewEmptyNode()
-	node.AddItem(item1)
-	node.AddItem(item2)
+	node.AddItem(item1, 0)
+	node.AddItem(item2, 1)
 
 	node.WriteToBuffer(buf)
 
@@ -32,8 +32,8 @@ func TestFindKeyInNode(t *testing.T) {
 	item2, _ := db.NewItem([]byte("Key2"), []byte("Value 2"))
 
 	node := db.NewEmptyNode()
-	node.AddItem(item1)
-	node.AddItem(item2)
+	node.AddItem(item1, 0)
+	node.AddItem(item2, 1)
 
 	found, index := node.FindKeyInNode([]byte("Key2"))
 	if found == false && index != -1 {
