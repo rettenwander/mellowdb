@@ -44,7 +44,7 @@ func TestIOEngineRW(t *testing.T) {
 
 	data := []byte("This is test data")
 
-	pageW := e.AllocateEmptyPage()
+	pageW := e.AllocateEmptyPage(0)
 	copy(pageW.Data[:len(data)], data)
 
 	err = e.WritePage(pageW)
