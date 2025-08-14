@@ -3,6 +3,8 @@ package db
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"slices"
 
 	"github.com/rettenwander/mellowdb/io"
 )
@@ -13,8 +15,8 @@ type Node struct {
 	children []io.PageID
 }
 
-func NewEmptyNode() *Node {
-	return &Node{}
+func NewEmptyNode(id io.PageID) *Node {
+	return &Node{pageId: id}
 }
 
 func (n *Node) isLeaf() bool {
@@ -120,7 +122,7 @@ func (n *Node) ReadFromBuffer(buf []byte) {
 		offset += 1
 
 		value := buf[offset : offset+vlen]
-		offset += uint16(klen)
+		offset += uint16(vlen)
 
 		n.items = append(n.items, &Item{key: key, value: value})
 	}
@@ -139,13 +141,38 @@ func (n *Node) AddItem(i *Item, index int) {
 		return
 	}
 
-	n.items = append(n.items[:index+1], n.items[index:]...)
-	n.items[index] = i
+	n.items = slices.Insert(n.items, index, i)
+
+	//n.items = append(n.items[:index+1], n.items[index:]...)
+	//n.items[index] = i
 }
 
-func (n *Node) AddChild(id io.PageID) error {
-	n.children = append(n.children, id)
-	return nil
+func (n *Node) AddChild(id io.PageID, index int) {
+	if len(n.children) == index {
+		n.children = append(n.children, id)
+		return
+	}
+
+	n.children = append(n.children[:index+1], n.children[index:]...)
+	n.children[index] = id
+}
+
+func (n *Node) Pop() (*Item, io.PageID, error) {
+	if len(n.items) < 1 {
+		return nil, -1, errors.New("Node is empty")
+	}
+
+	if n.isLeaf() {
+		item := n.items[0]
+		n.items = n.items[1:]
+		return item, -1, nil
+	}
+
+	item := n.items[0]
+	n.items = n.items[1:]
+	child := n.children[0]
+	n.children = n.children[1:]
+	return item, child, nil
 }
 
 // Returns a boolean indicating if the key was found.
@@ -167,4 +194,21 @@ func (n *Node) FindKeyInNode(key []byte) (bool, int) {
 
 	// The key is not in this node, search child nodes
 	return false, len(n.items)
+}
+
+func (n *Node) Size() int {
+	size := 3
+
+	size += (len(n.items) + 1) * io.PageIDSize
+	size += len(n.items) * 2
+
+	for _, item := range n.items {
+		size += item.Size()
+	}
+
+	return size
+}
+
+func (n *Node) PageID() io.PageID {
+	return n.pageId
 }

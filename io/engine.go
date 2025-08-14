@@ -66,8 +66,7 @@ func (e *Engine) Close() error {
 		return nil
 	}
 
-	metadataPage := e.AllocateEmptyPage()
-	metadataPage.id = 0
+	metadataPage := e.AllocateEmptyPage(0)
 
 	e.Metadata.PageSize = MetadataPageSize
 	e.Metadata.WriteToBuffer(metadataPage.Data)
@@ -86,8 +85,7 @@ func (e *Engine) ReadPage(id PageID) (*Page, error) {
 		return nil, err
 	}
 
-	page := e.AllocateEmptyPage()
-	page.id = id
+	page := e.AllocateEmptyPage(id)
 
 	offset := int64(id) * int64(e.PageSize)
 	_, err := e.file.ReadAt(page.Data, offset)
@@ -125,8 +123,8 @@ func (e *Engine) checkRWPage(id PageID) error {
 	return nil
 }
 
-func (e *Engine) AllocateEmptyPage() *Page {
-	return &Page{Data: make([]byte, e.PageSize)}
+func (e *Engine) AllocateEmptyPage(id PageID) *Page {
+	return &Page{Data: make([]byte, e.PageSize), id: id}
 }
 
 func (e *Engine) AllocateEmptyPageWithFreeID() *Page {

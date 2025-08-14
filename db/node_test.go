@@ -13,13 +13,13 @@ func TestNodeRW(t *testing.T) {
 	item1, _ := db.NewItem([]byte("Key1"), []byte("Value 1"))
 	item2, _ := db.NewItem([]byte("Key2"), []byte("Value 2"))
 
-	node := db.NewEmptyNode()
+	node := db.NewEmptyNode(1)
 	node.AddItem(item1, 0)
 	node.AddItem(item2, 1)
 
 	node.WriteToBuffer(buf)
 
-	node2 := db.NewEmptyNode()
+	node2 := db.NewEmptyNode(1)
 	node2.ReadFromBuffer(buf)
 
 	if !reflect.DeepEqual(node, node2) {
@@ -31,7 +31,7 @@ func TestFindKeyInNode(t *testing.T) {
 	item1, _ := db.NewItem([]byte("Key1"), []byte("Value 1"))
 	item2, _ := db.NewItem([]byte("Key2"), []byte("Value 2"))
 
-	node := db.NewEmptyNode()
+	node := db.NewEmptyNode(1)
 	node.AddItem(item1, 0)
 	node.AddItem(item2, 1)
 
